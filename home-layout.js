@@ -559,11 +559,12 @@
       const shell = document.createElement('div');
       shell.className = `activity-entry-shell${entry.activityType === 'interruption' ? ' interruption-shell' : ''}`;
       shell.dataset.id = id;
+      const canDelete = state.settings.swipeDeleteEnabled !== false;
       shell.innerHTML = `
         <div class="activity-swipe-row" data-id="${safeText(id)}">
-          <div class="activity-swipe-actions" aria-hidden="true">
-            <span class="activity-swipe-edit">Wijzig</span>
-            <span class="activity-swipe-delete">Wis</span>
+          <div class="activity-swipe-actions${canDelete ? '' : ' edit-only'}">
+            ${canDelete ? `<button type="button" class="activity-swipe-action activity-swipe-delete" data-swipe-action="delete" aria-label="Registratie verwijderen">Verwijder</button>` : ''}
+            <button type="button" class="activity-swipe-action activity-swipe-edit" data-swipe-action="edit" aria-label="Registratie bewerken">Bewerk</button>
           </div>
         </div>
         <div class="activity-inline-details" ${expandedEntryId === id ? '' : 'hidden'}></div>`;
@@ -572,6 +573,16 @@
       original.replaceWith(shell);
 
       const details = shell.querySelector('.activity-inline-details');
+      shell.querySelector('[data-swipe-action="edit"]')?.addEventListener('click', event => {
+        event.stopPropagation();
+        resetActivitySwipe(swipeRow);
+        openEntryEdit(id);
+      });
+      shell.querySelector('[data-swipe-action="delete"]')?.addEventListener('click', event => {
+        event.stopPropagation();
+        resetActivitySwipe(swipeRow);
+        deleteEntryInline(id);
+      });
       if (expandedEntryId === id) {
         shell.classList.add('expanded');
         details.innerHTML = entryDetailsHtml(entry);
@@ -667,11 +678,13 @@
       return;
     }
     event.preventDefault();
-    const dx = Math.max(-168, Math.min(0, rawX));
+    const canDelete = state.settings.swipeDeleteEnabled !== false;
+    const maxDistance = canDelete ? 168 : 84;
+    const dx = Math.max(-maxDistance, Math.min(0, rawX));
     gesture.dx = dx;
     gesture.surface.style.transition = 'none';
     gesture.surface.style.transform = `translateX(${dx}px)`;
-    gesture.row.classList.toggle('delete-armed', dx <= -132);
+    gesture.row.classList.toggle('delete-armed', canDelete && dx <= -132);
   }
 
   function deleteEntryInline(id) {
@@ -702,7 +715,8 @@
     }
     gesture.surface.dataset.suppressClick = '1';
     setTimeout(() => { if (gesture.surface) delete gesture.surface.dataset.suppressClick; }, 450);
-    if (gesture.dx <= -132) {
+    const canDelete = state.settings.swipeDeleteEnabled !== false;
+    if (canDelete && gesture.dx <= -132) {
       resetActivitySwipe(gesture.row);
       setTimeout(() => deleteEntryInline(gesture.id), 20);
       return;
