@@ -9,19 +9,21 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Uren" />
   <meta name="format-detection" content="telephone=no" />
-  <title>Urenregistratie</title>
+  <title>Tijdsregistratie</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="home-layout.css" />
+  <link rel="stylesheet" href="home-top.css" />
 </head>
 <body>
   <div id="app" class="app-shell">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Persoonlijke registratie · v0.3.0</p>
-        <h1>Uren</h1>
+      <div class="topbar-copy">
+        <p id="appDateVersion" class="eyebrow"></p>
+        <h1>Tijdsregistratie</h1>
+        <p id="appTaskCount" class="topbar-count"></p>
       </div>
       <button id="openSettings" class="iconbtn" type="button" aria-label="Instellingen">⋯</button>
     </header>
@@ -33,5 +35,6 @@
   <div id="toast" class="toast hidden" role="status"></div>
   <script src="app.js" defer></script>
   <script src="home-layout.js" defer></script>
+  <script src="home-top.js" defer></script>
 </body>
 </html>
