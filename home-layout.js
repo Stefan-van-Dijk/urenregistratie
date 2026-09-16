@@ -500,6 +500,7 @@
         createdAt: new Date().toISOString()
       });
       state.entries.push(entry);
+      state.lastCompletion = { type: 'task', entryId: entry.id, completedAt: new Date().toISOString() };
       state.timer = defaultTimer();
       saveState();
       panelMode = 'overview';
@@ -812,8 +813,10 @@
       const action = main.querySelector(':scope > .suggestion, :scope > .active-card');
       const period = main.querySelector(':scope > .period-nav, :scope > .period-overview');
       const summary = main.querySelector(':scope > .summary');
+      const undo = main.querySelector(':scope > .undo-completion');
 
       if (action && main.firstElementChild !== action) main.insertBefore(action, main.firstElementChild);
+      if (action && undo && action.nextElementSibling !== undo) action.after(undo);
       compactAction(action);
 
       if (panelMode === 'task' && period) renderTaskPanel(period);
