@@ -1,0 +1,78 @@
+/* Home hierarchy aligned with kilometerregistratie: action first, then one period overview block. */
+.period-overview{
+  margin-top:0!important;
+  margin-bottom:14px!important;
+  padding:20px 0 18px!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:1px solid var(--line)!important;
+  border-radius:0!important;
+}
+.period-overview .period-head{margin-bottom:5px}
+.period-overview .period-center{gap:4px}
+.period-overview .period-center strong{font-size:25px;letter-spacing:-.025em}
+.period-overview .period-center small{font-size:11px}
+.period-overview .period-arrow{background:transparent;border:0;color:var(--muted);font-size:24px}
+.period-overview .period-tabs{margin-top:8px;margin-bottom:0}
+
+.period-overview .period-summary{
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+}
+.period-overview .period-summary .summary-main{
+  display:flex;
+  flex-direction:column-reverse;
+  align-items:center;
+  gap:5px;
+  padding:13px 0 3px;
+  text-align:center;
+}
+.period-overview .period-summary .summary-label{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:650;
+  letter-spacing:0;
+  text-transform:none;
+}
+.period-overview .period-summary .summary-value{
+  margin:0;
+  font-size:40px;
+  line-height:1;
+  letter-spacing:-.045em;
+}
+.period-overview .period-summary .summary-parts{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+  padding-top:8px;
+  border:0;
+}
+.period-overview .period-summary .summary-part{
+  flex:0 0 auto;
+  padding:0;
+  text-align:center;
+}
+.period-overview .period-summary .summary-part+.summary-part{border:0}
+.period-overview .period-summary .summary-part span,
+.period-overview .period-summary .summary-part strong{
+  display:inline;
+  font-size:11px;
+}
+.period-overview .period-summary .summary-part strong{
+  margin:0 0 0 4px;
+  font-size:12px;
+}
+
+/* The current/suggested activity is the first decision on the screen. */
+.content>.suggestion,
+.content>.active-card{margin-bottom:6px}
+
+@media(max-width:520px){
+  .period-overview .period-center strong{font-size:23px}
+  .period-overview .period-summary .summary-value{font-size:38px}
+  .period-overview .period-summary .summary-parts{gap:13px}
+}
