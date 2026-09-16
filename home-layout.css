@@ -103,6 +103,11 @@
 .entry-value-stack small{margin-top:3px;font-size:9px;color:var(--muted)}
 .activity-swipe-surface.entry.interruption .entry-main strong::before{content:'↳ ';color:var(--warn)}
 .section .empty{padding:18px 2px;border:0;border-top:1px solid var(--line);border-radius:0;text-align:left}
+.undo-completion{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.undo-completion span{min-width:0}
+.undo-completion strong,.undo-completion small{display:block}
+.undo-completion small{margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.undo-completion button{flex:0 0 auto;padding:8px 0;border:0;background:transparent;color:var(--accent);font-weight:750;cursor:pointer}
 .activity-inline-details{padding:0 2px 15px;background:var(--bg);animation:inline-details-in .2s ease}
 .activity-inline-details[hidden]{display:none}
 .activity-inline-details-inner{padding:11px 0 2px}

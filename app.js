@@ -41,7 +41,8 @@ const defaultState = () => ({
   employers: [],
   workspaces: [],
   departments: [],
-  entries: []
+  entries: [],
+  lastCompletion: null
 });
 
 let state = loadState();
@@ -374,9 +375,48 @@ function render() {
   const main = $('#main');
   const periodEntries = entriesForPeriod();
   const t = totals(periodEntries);
-  main.innerHTML = `${renderPeriodNav()}${renderSummary(t)}${renderActionCard()}${renderPeriodList(periodEntries)}`;
+  main.innerHTML = `${renderPeriodNav()}${renderSummary(t)}${renderActionCard()}${renderUndoCompletion()}${renderPeriodList(periodEntries)}`;
   wireHome();
   syncNavigationChrome();
+}
+
+function renderUndoCompletion() {
+  if (state.timer.status !== 'inactive' || state.lastCompletion?.type !== 'task') return '';
+  const entry = state.entries.find(item => item.id === state.lastCompletion.entryId && item.activityType !== 'interruption');
+  if (!entry) return '';
+  return `<section class="undo-completion"><span><strong>Taak afgerond</strong><small>${safeText(entry.themeName || 'Activiteit')} · ${displayMinutes(entry.ownMinutes)}</small></span><button id="reopenLastTask" type="button">Opnieuw activeren</button></section>`;
+}
+
+function restoreTimerFromEntry(entry) {
+  return {
+    ...defaultTimer(),
+    status: 'active',
+    sessionId: entry.id,
+    startISO: entry.startISO,
+    themeId: entry.themeId || null,
+    themeName: entry.themeName || '',
+    subthemeId: entry.subthemeId || null,
+    subthemeName: entry.subthemeName || '',
+    locationName: entry.locationName || '',
+    note: entry.note || ''
+  };
+}
+
+function reopenLastTask() {
+  if (state.timer.status !== 'inactive') return toast('Er is al een actieve taak');
+  const completion = state.lastCompletion;
+  const entry = state.entries.find(item => item.id === completion?.entryId && item.activityType !== 'interruption');
+  if (!entry?.startISO) return toast('Deze taak kan niet opnieuw worden geactiveerd');
+  for (const allocation of entry.allocations || []) {
+    const colleague = state.colleagues.find(item => item.id === allocation.colleagueId);
+    if (colleague) colleague.usageCount = Math.max(0, Number(colleague.usageCount || 0) - 1);
+  }
+  state.entries = state.entries.filter(item => item.id !== entry.id);
+  state.timer = restoreTimerFromEntry(entry);
+  state.lastCompletion = null;
+  saveState();
+  render();
+  toast('Taak opnieuw geactiveerd');
 }
 
 function renderPeriodNav() {
@@ -457,6 +497,7 @@ function entryRow(e, interruption = false) {
 }
 
 function wireHome() {
+  $('#reopenLastTask')?.addEventListener('click', reopenLastTask);
   $('#periodPrev')?.addEventListener('click', () => movePeriod(-1));
   $('#periodNext')?.addEventListener('click', () => movePeriod(1));
   $$('[data-period]').forEach(btn => btn.addEventListener('click', () => { state.ui.periodMode = btn.dataset.period; saveState(); render(); }));
@@ -518,6 +559,7 @@ function openStartModal(prefill = {}) {
 function startTimer(theme, subtheme = null, locationName = '', note = '') {
   theme.usageCount = (theme.usageCount || 0) + 1; if (subtheme) subtheme.usageCount = (subtheme.usageCount || 0) + 1;
   state.timer = { ...defaultTimer(), status: 'active', sessionId: uid(), startISO: new Date().toISOString(), themeId: theme.id, themeName: theme.name, subthemeId: subtheme?.id || null, subthemeName: subtheme?.name || '', locationName, note };
+  state.lastCompletion = null;
   saveState(); render(); toast('Activiteit gestart');
 }
 
@@ -573,7 +615,7 @@ function openStopModal() {
   const timer = state.timer; if (timer.status !== 'pending') return; const calc = calculateParentTimer(timer);
   openModal(`<div class="modal-head"><h2 id="modalTitle">Boeking afronden</h2><button class="close">×</button></div><div class="detail-grid"><div class="detail-item"><span>Werkelijke periode</span><strong>${clockMinutes(calc.span)}</strong></div><div class="detail-item"><span>Tussenstops afgetrokken</span><strong>${clockMinutes(calc.deducted)}</strong></div><div class="detail-item"><span>Netto werkelijke tijd</span><strong>${clockMinutes(calc.net)}</strong></div><div class="detail-item"><span>Te boeken</span><strong>${displayMinutes(calc.booked)}</strong></div></div>${colleagueSection(calc.booked,'stop')}<button id="saveStop" class="btn primary full">Opslaan</button>`);
   const getAllocations = wireColleagueSection('stop', calc.booked);
-  $('#saveStop').addEventListener('click', () => { const allocations = getAllocations(); allocations.forEach(a=>{const c=state.colleagues.find(x=>x.id===a.colleagueId);if(c)c.usageCount=(c.usageCount||0)+1;}); const colleagueMinutes=allocations.reduce((s,x)=>s+x.minutes,0); const entry = normalizeEntry({ id: timer.sessionId, activityType:'normal', parentActivityId:null, kind:'Stopwatch', dateISO:timer.stopISO, themeId:timer.themeId,themeName:timer.themeName,subthemeId:timer.subthemeId,subthemeName:timer.subthemeName, locationName:timer.locationName,note:timer.note,startISO:timer.startISO,endISO:timer.stopISO, actualMinutes:calc.span,netActualMinutes:calc.net,deductedInterruptionMinutes:calc.deducted, roundedMinutes:calc.booked,ownMinutes:calc.booked,colleagueMinutes,totalMinutes:calc.booked+colleagueMinutes, allocations,roundingSnapshot:roundingSnapshot(),createdAt:new Date().toISOString() }); state.entries.push(entry); state.timer=defaultTimer(); saveState(); closeModal(); render(); toast('Activiteit opgeslagen'); });
+  $('#saveStop').addEventListener('click', () => { const allocations = getAllocations(); allocations.forEach(a=>{const c=state.colleagues.find(x=>x.id===a.colleagueId);if(c)c.usageCount=(c.usageCount||0)+1;}); const colleagueMinutes=allocations.reduce((s,x)=>s+x.minutes,0); const entry = normalizeEntry({ id: timer.sessionId, activityType:'normal', parentActivityId:null, kind:'Stopwatch', dateISO:timer.stopISO, themeId:timer.themeId,themeName:timer.themeName,subthemeId:timer.subthemeId,subthemeName:timer.subthemeName, locationName:timer.locationName,note:timer.note,startISO:timer.startISO,endISO:timer.stopISO, actualMinutes:calc.span,netActualMinutes:calc.net,deductedInterruptionMinutes:calc.deducted, roundedMinutes:calc.booked,ownMinutes:calc.booked,colleagueMinutes,totalMinutes:calc.booked+colleagueMinutes, allocations,roundingSnapshot:roundingSnapshot(),createdAt:new Date().toISOString() }); state.entries.push(entry); state.lastCompletion={type:'task',entryId:entry.id,completedAt:new Date().toISOString()}; state.timer=defaultTimer(); saveState(); closeModal(); render(); toast('Activiteit opgeslagen'); });
 }
 
 function openManualModal() {
