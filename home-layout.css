@@ -1,4 +1,4 @@
-/* Home hierarchy aligned with kilometerregistratie: action first, then one period overview block. */
+/* Main-screen interaction aligned with kilometerregistratie. */
 .period-overview{
   margin-top:0!important;
   margin-bottom:14px!important;
@@ -14,65 +14,55 @@
 .period-overview .period-center small{font-size:11px}
 .period-overview .period-arrow{background:transparent;border:0;color:var(--muted);font-size:24px}
 .period-overview .period-tabs{margin-top:8px;margin-bottom:0}
-
-.period-overview .period-summary{
-  margin:0!important;
-  background:transparent!important;
-  border:0!important;
-  border-radius:0!important;
-  overflow:visible!important;
-}
-.period-overview .period-summary .summary-main{
-  display:flex;
-  flex-direction:column-reverse;
-  align-items:center;
-  gap:5px;
-  padding:13px 0 3px;
-  text-align:center;
-}
-.period-overview .period-summary .summary-label{
-  color:var(--muted);
-  font-size:11px;
-  font-weight:650;
-  letter-spacing:0;
-  text-transform:none;
-}
-.period-overview .period-summary .summary-value{
-  margin:0;
-  font-size:40px;
-  line-height:1;
-  letter-spacing:-.045em;
-}
-.period-overview .period-summary .summary-parts{
-  display:flex;
-  justify-content:center;
-  gap:20px;
-  flex-wrap:wrap;
-  padding-top:8px;
-  border:0;
-}
-.period-overview .period-summary .summary-part{
-  flex:0 0 auto;
-  padding:0;
-  text-align:center;
-}
+.period-overview .period-summary{margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;overflow:visible!important}
+.period-overview .period-summary .summary-main{display:flex;flex-direction:column-reverse;align-items:center;gap:5px;padding:13px 0 3px;text-align:center}
+.period-overview .period-summary .summary-label{color:var(--muted);font-size:11px;font-weight:650;letter-spacing:0;text-transform:none}
+.period-overview .period-summary .summary-value{margin:0;font-size:40px;line-height:1;letter-spacing:-.045em}
+.period-overview .period-summary .summary-parts{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;padding-top:8px;border:0}
+.period-overview .period-summary .summary-part{flex:0 0 auto;padding:0;text-align:center}
 .period-overview .period-summary .summary-part+.summary-part{border:0}
-.period-overview .period-summary .summary-part span,
-.period-overview .period-summary .summary-part strong{
-  display:inline;
-  font-size:11px;
-}
-.period-overview .period-summary .summary-part strong{
-  margin:0 0 0 4px;
-  font-size:12px;
-}
+.period-overview .period-summary .summary-part span,.period-overview .period-summary .summary-part strong{display:inline;font-size:11px}
+.period-overview .period-summary .summary-part strong{margin:0 0 0 4px;font-size:12px}
 
-/* The current/suggested activity is the first decision on the screen. */
-.content>.suggestion,
-.content>.active-card{margin-bottom:6px}
+.content>.suggestion,.content>.active-card{margin-bottom:6px}
+.home-action{padding-bottom:20px!important}
+.home-action-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.home-action-copy{flex:1;min-width:0;text-align:left}
+.home-action-copy h2{margin:5px 0 2px!important;font-size:28px!important}
+.home-action-copy p{margin:0;color:var(--muted);font-size:13px}
+.home-action-copy small{display:block;margin-top:5px;color:var(--muted)}
+.home-action-button{flex:0 0 auto;min-width:138px}
+
+.period-entry-mode{padding-top:18px!important}
+.inline-register-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.inline-register-head h2{margin:4px 0 0;font-size:24px;letter-spacing:-.025em}
+.inline-close{width:40px;height:40px;padding:0!important;font-size:27px!important;line-height:1}
+.inline-proposal,.inline-parent-task{display:flex;flex-direction:column;gap:3px;padding:11px 0 13px;border-bottom:1px solid var(--line);margin-bottom:13px}
+.inline-proposal span,.inline-parent-task span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:750}
+.inline-proposal strong,.inline-parent-task strong{font-size:15px}
+.inline-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px}
+.inline-field{display:block;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.inline-field>span,.inline-label{display:block;margin-bottom:5px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:750}
+.inline-field>span small{font-size:9px;text-transform:none;letter-spacing:0;font-weight:600}
+.inline-field select,.inline-field input{min-height:34px;padding:0;border:0;background:transparent;border-radius:0}
+.inline-field select:focus,.inline-field input:focus{outline:0;border:0}
+.inline-field-wide{grid-column:1/-1}
+.inline-field-block{margin-bottom:13px}
+.inline-people{display:flex;gap:7px;flex-wrap:wrap}
+.person-choice{position:relative}
+.person-choice input{position:absolute;opacity:0;pointer-events:none}
+.person-choice span{display:block;padding:9px 11px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
+.person-choice input:checked+span{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--text)}
+.inline-add-person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:0 0 12px}
+.inline-add-person input{min-height:40px}
+.inline-first-theme{margin-bottom:0}
 
 @media(max-width:520px){
   .period-overview .period-center strong{font-size:23px}
   .period-overview .period-summary .summary-value{font-size:38px}
   .period-overview .period-summary .summary-parts{gap:13px}
+  .home-action-row{align-items:stretch;flex-direction:column}
+  .home-action-button{width:100%}
+  .inline-fields{grid-template-columns:1fr}
+  .inline-field-wide{grid-column:auto}
 }
