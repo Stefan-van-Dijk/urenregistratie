@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.4.0';
+  const APP_VERSION = '0.4.1';
 
   function dateVersionText() {
     const date = new Intl.DateTimeFormat('nl-NL', {
@@ -23,7 +23,9 @@
     const count = document.querySelector('#appTaskCount');
     const dateText = dateVersionText();
     const total = taskCount();
-    const countText = `${total} ${total === 1 ? 'taak' : 'taken'} geregistreerd`;
+    const countText = count?.dataset.navigationView === 'settings'
+      ? 'Tijdsregistratie'
+      : `${total} ${total === 1 ? 'taak' : 'taken'} geregistreerd`;
 
     if (date && date.textContent !== dateText) date.textContent = dateText;
     if (count && count.textContent !== countText) count.textContent = countText;

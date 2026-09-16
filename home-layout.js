@@ -167,14 +167,10 @@
       action.classList.add('home-action');
       action.innerHTML = `
         <div class="kicker">${suggestionValue ? 'Waarschijnlijk nu' : 'Nieuwe activiteit'}</div>
-        <div class="home-action-row">
-          <div class="home-action-copy">
-            <h2>${safeText(suggestionValue?.theme?.name || 'Wat ga je doen?')}</h2>
-            ${suggestionValue?.sub ? `<p>${safeText(suggestionValue.sub.name)}</p>` : '<p>Kies een taak en start direct.</p>'}
-            ${suggestionValue?.locationName ? `<small>⌖ ${safeText(suggestionValue.locationName)}</small>` : ''}
-          </div>
-          <button id="registerTaskInline" class="btn primary home-action-button">Taak registreren</button>
-        </div>`;
+        <h2 class="home-action-title">${safeText(suggestionValue?.theme?.name || 'Wat ga je doen?')}</h2>
+        <p class="home-action-subtitle">${safeText(suggestionValue?.sub?.name || 'Kies een taak en start direct.')}</p>
+        ${suggestionValue?.locationName ? `<div class="home-action-meta">⌖ ${safeText(suggestionValue.locationName)}</div>` : ''}
+        <button id="registerTaskInline" class="btn primary full home-action-button">Taak registreren</button>`;
       $('#registerTaskInline')?.addEventListener('click', () => {
         panelMode = 'task';
         const period = document.querySelector('#main > .period-nav, #main > .period-overview');
@@ -793,7 +789,8 @@
       ? gesture.dx <= -SCREEN_EDGE_SWIPE_DISTANCE
       : gesture.dx >= SCREEN_EDGE_SWIPE_DISTANCE;
     if (!correct || Math.abs(gesture.dx) < Math.abs(gesture.dy) * 1.2) return;
-    if (gesture.direction === 'left') openSettings();
+    if (gesture.direction === 'left' && currentView === 'home') openSettings();
+    else if (gesture.direction === 'right' && currentView === 'settings') closeSettings();
     else closeModal();
   }
 

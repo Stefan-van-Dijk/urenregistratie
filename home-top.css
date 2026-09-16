@@ -1,17 +1,19 @@
-/* v0.4.0 — dezelfde bovenkaart als kilometerregistratie. */
+/* v0.4.1 — dezelfde bovenkaart als kilometerregistratie. */
 .topbar{align-items:flex-start}
 .topbar-copy{min-width:0}
 .topbar-count{margin:5px 0 0;color:var(--muted);font-size:12px}
 
 .content>.home-action{
-  padding:17px!important;
-  margin:0 0 6px!important;
+  padding:20px!important;
+  margin:0 0 16px!important;
 }
-.home-action>.kicker,.home-action .home-action-copy{display:block!important}
-.home-action .home-action-row{display:block!important}
+.home-action>.kicker{display:block!important}
+.home-action .home-action-title{margin:7px 0!important;font-size:27px!important;line-height:1.15!important}
+.home-action .home-action-subtitle{margin:0;color:var(--muted)}
+.home-action .home-action-meta{margin-top:7px;color:var(--muted);font-size:12px}
 .home-action .home-action-button{width:100%!important;min-width:0!important;margin-top:15px}
 
-.home-action.context-preparing .home-action-copy{opacity:.55!important}
+.home-action.context-preparing .home-action-title,.home-action.context-preparing .home-action-subtitle,.home-action.context-preparing .home-action-meta{opacity:.55!important}
 .home-action.context-preparing .home-action-button{
   background:transparent!important;
   border-color:var(--line)!important;
