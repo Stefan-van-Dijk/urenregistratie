@@ -1,0 +1,31 @@
+/* v0.3.1 — top of home screen mirrors kilometerregistratie. */
+.topbar{align-items:flex-start}
+.topbar-copy{min-width:0}
+.topbar-count{margin:5px 0 0;color:var(--muted);font-size:12px}
+
+/* In rust toont het hoofdscherm alleen de primaire actie. */
+.content>.home-action{
+  padding:0!important;
+  margin:0 0 16px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+.home-action>.kicker,.home-action .home-action-copy{display:none!important}
+.home-action .home-action-row{display:block!important}
+.home-action .home-action-button{width:100%!important;min-width:0!important}
+
+/* Tijdens voorbereiden hetzelfde gedrag als Vertrek registreren in de kilometerapp. */
+.home-action.context-preparing{padding:0!important}
+.home-action.context-preparing>*{opacity:1!important}
+.home-action.context-preparing .home-action-button{
+  background:transparent!important;
+  border-color:transparent!important;
+  color:var(--muted)!important;
+  min-height:40px;
+  opacity:.62!important;
+}
+
+@media(max-width:520px){
+  .topbar h1{font-size:24px}
+}
