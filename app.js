@@ -260,6 +260,13 @@ function periodBounds(mode = state.ui.periodMode, anchorValue = state.ui.anchorD
   } else if (mode === 'month') {
     start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (mode === 'quarter') {
+    const month = Math.floor(anchor.getMonth() / 3) * 3;
+    start = new Date(anchor.getFullYear(), month, 1);
+    end = new Date(anchor.getFullYear(), month + 3, 0, 23, 59, 59, 999);
+  } else if (mode === 'all') {
+    start = new Date(2000, 0, 1);
+    end = new Date(2999, 11, 31, 23, 59, 59, 999);
   } else {
     start = new Date(anchor.getFullYear(), 0, 1);
     end = new Date(anchor.getFullYear(), 11, 31, 23, 59, 59, 999);
@@ -272,6 +279,8 @@ function periodLabel() {
   if (state.ui.periodMode === 'day') return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(start);
   if (state.ui.periodMode === 'week') return `Week ${isoWeekNumber(start)}`;
   if (state.ui.periodMode === 'month') return new Intl.DateTimeFormat('nl-NL', { month: 'long', year: 'numeric' }).format(start);
+  if (state.ui.periodMode === 'quarter') return `Kwartaal ${Math.floor(start.getMonth() / 3) + 1}`;
+  if (state.ui.periodMode === 'all') return 'Alle tijden';
   return String(start.getFullYear());
 }
 
@@ -279,6 +288,7 @@ function periodSubLabel() {
   const { start, end } = periodBounds();
   if (state.ui.periodMode === 'day') return dateText(start);
   if (state.ui.periodMode === 'year') return `${start.getFullYear()}`;
+  if (state.ui.periodMode === 'all') return 'Volledige historie';
   return `${new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short' }).format(start)} – ${new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }).format(end)}`;
 }
 
@@ -295,12 +305,15 @@ function movePeriod(direction) {
   if (state.ui.periodMode === 'day') d.setDate(d.getDate() + direction);
   if (state.ui.periodMode === 'week') d.setDate(d.getDate() + 7 * direction);
   if (state.ui.periodMode === 'month') d.setMonth(d.getMonth() + direction);
+  if (state.ui.periodMode === 'quarter') d.setMonth(d.getMonth() + 3 * direction);
   if (state.ui.periodMode === 'year') d.setFullYear(d.getFullYear() + direction);
+  if (state.ui.periodMode === 'all') return;
   state.ui.anchorDate = dateInputValue(d);
   saveState(); render();
 }
 
 function entriesForPeriod() {
+  if (state.ui.periodMode === 'all') return [...state.entries];
   const { start, end } = periodBounds();
   return state.entries.filter(e => {
     const d = new Date(e.dateISO || e.endISO || e.startISO || e.createdAt);
@@ -360,7 +373,8 @@ function render() {
 }
 
 function renderPeriodNav() {
-  return `<section class="period-nav"><div class="period-head"><button id="periodPrev" class="period-arrow" aria-label="Vorige periode">‹</button><div class="period-center"><strong>${safeText(periodLabel())}</strong><small>${safeText(periodSubLabel())}</small></div><button id="periodNext" class="period-arrow" aria-label="Volgende periode">›</button></div><div class="period-tabs">${['day','week','month','year'].map(mode => `<button data-period="${mode}" class="${state.ui.periodMode === mode ? 'active' : ''}">${({day:'Dag',week:'Week',month:'Maand',year:'Jaar'})[mode]}</button>`).join('')}</div></section>`;
+  const all = state.ui.periodMode === 'all';
+  return `<section class="period-nav"><div class="period-head"><button id="periodPrev" class="period-arrow" aria-label="Vorige periode" ${all ? 'disabled' : ''}>‹</button><div class="period-center"><strong>${safeText(periodLabel())}</strong><small>${safeText(periodSubLabel())}</small></div><button id="periodNext" class="period-arrow" aria-label="Volgende periode" ${all ? 'disabled' : ''}>›</button></div></section>`;
 }
 
 function renderSummary(t) {
@@ -387,18 +401,52 @@ function renderPeriodList(entries) {
   const interruptions = entries.filter(e => e.activityType === 'interruption');
   if (!entries.length) return `<section class="section"><div class="section-title"><h2>Registraties</h2><button id="manualEntry" class="btn small">+ Toevoegen</button></div><div class="empty">Nog geen registraties in deze periode.</div></section>`;
   const html = [];
+  let currentDay = '';
   for (const e of mains) {
+    const day = entryDayKey(e);
+    if (day !== currentDay) {
+      currentDay = day;
+      html.push(`<div class="activity-group-title">${safeText(entryDayLabel(e))}</div>`);
+    }
     html.push(entryRow(e));
     interruptions.filter(x => x.parentActivityId === e.id).sort((a,b)=>new Date(a.startISO)-new Date(b.startISO)).forEach(child => html.push(entryRow(child, true)));
   }
-  interruptions.filter(x => !mains.some(e => e.id === x.parentActivityId)).forEach(x => html.push(entryRow(x, true)));
+  interruptions.filter(x => !mains.some(e => e.id === x.parentActivityId)).sort((a,b) => new Date(b.dateISO || b.endISO || b.createdAt) - new Date(a.dateISO || a.endISO || a.createdAt)).forEach(x => {
+    const day = entryDayKey(x);
+    if (day !== currentDay) {
+      currentDay = day;
+      html.push(`<div class="activity-group-title">${safeText(entryDayLabel(x))}</div>`);
+    }
+    html.push(entryRow(x, true));
+  });
   return `<section class="section"><div class="section-title"><h2>Registraties</h2><button id="manualEntry" class="btn small">+ Toevoegen</button></div><div class="list">${html.join('')}</div></section>`;
+}
+
+function entryMoment(entry) {
+  return new Date(entry.dateISO || entry.endISO || entry.startISO || entry.createdAt);
+}
+
+function entryDayKey(entry) {
+  return dateInputValue(entryMoment(entry));
+}
+
+function entryDayLabel(entry) {
+  const date = entryMoment(entry);
+  const today = dateInputValue(new Date());
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const key = dateInputValue(date);
+  if (key === today) return 'Vandaag';
+  if (key === dateInputValue(yesterdayDate)) return 'Gisteren';
+  return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
 }
 
 function entryRow(e, interruption = false) {
   const secondary = [e.subthemeName, e.locationName].filter(Boolean).join(' · ');
-  const time = e.startISO && e.endISO ? `${timeText(e.startISO)}–${timeText(e.endISO)}` : dateText(e.dateISO);
-  return `<div class="entry ${interruption ? 'interruption' : ''}" data-entry="${e.id}"><div class="entry-main"><strong>${safeText(e.themeName || (interruption ? 'Tussenstop' : 'Activiteit'))}</strong><small>${safeText(time)}${secondary ? ` · ${safeText(secondary)}` : ''}</small></div><div class="entry-value">${displayMinutes(e.ownMinutes)}</div><div class="chev">›</div></div>`;
+  const start = e.startISO ? timeText(e.startISO) : '—';
+  const period = e.startISO && e.endISO ? `${timeText(e.startISO)}–${timeText(e.endISO)}` : 'Handmatig';
+  const total = Number(e.totalMinutes) !== Number(e.ownMinutes) ? `<small>Totaal ${displayMinutes(e.totalMinutes)}</small>` : '';
+  return `<div class="entry ${interruption ? 'interruption' : ''}" data-entry="${e.id}"><div class="entry-time">${safeText(start)}</div><div class="entry-main"><strong>${safeText(e.themeName || (interruption ? 'Tussenstop' : 'Activiteit'))}</strong><small>${safeText(period)}${secondary ? ` · ${safeText(secondary)}` : ''}</small></div><div class="entry-value-stack"><strong>${displayMinutes(e.ownMinutes)}</strong>${total}</div><div class="chev">›</div></div>`;
 }
 
 function wireHome() {
@@ -548,9 +596,18 @@ function recalculateNormalEntry(entry) {
   if (!entry.startISO || !entry.endISO) return; const span=actualMinutes(entry.startISO,entry.endISO);const deducted=state.entries.filter(x=>x.activityType==='interruption'&&x.parentActivityId===entry.id).reduce((s,x)=>s+(Number(x.deductMinutes)||0),0);const net=Math.max(1,span-deducted);const booked=roundByRule(net); entry.actualMinutes=span;entry.netActualMinutes=net;entry.deductedInterruptionMinutes=deducted;entry.roundedMinutes=booked;entry.ownMinutes=booked;entry.totalMinutes=booked+(Number(entry.colleagueMinutes)||0);
 }
 
+function settingsAccordion(title, subtitle, body) {
+  return `<details class="settings-accordion"><summary><span class="settings-accordion-title"><strong>${safeText(title)}</strong><small>${safeText(subtitle)}</small></span><span class="settings-accordion-arrow">›</span></summary><div class="settings-accordion-body">${body}</div></details>`;
+}
+
 function openSettings() {
-  openModal(`<div class="modal-head"><h2 id="modalTitle">Instellingen</h2><button class="close">×</button></div><div class="settings-section"><h3>Tijd en afronding</h3><div class="field"><label>Weergave</label><select id="timeDisplay"><option value="decimal" ${state.settings.timeDisplay==='decimal'?'selected':''}>Decimale uren (1,25)</option><option value="clock" ${state.settings.timeDisplay==='clock'?'selected':''}>Uren:minuten (1:15)</option></select></div><div class="field"><label>Afronding</label><select id="roundMode"><option value="none" ${state.settings.roundingMode==='none'?'selected':''}>Geen afronding</option><option value="up" ${state.settings.roundingMode==='up'?'selected':''}>Altijd omhoog</option><option value="threshold" ${state.settings.roundingMode==='threshold'?'selected':''}>Vanaf drempel omhoog</option></select></div><div class="field"><label>Tijdseenheid</label><select id="roundUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.roundingUnitMinutes)===x?'selected':''}>${x} min · ${decimalHours(x)} uur</option>`).join('')}</select></div><div class="field"><label>Drempel</label><select id="roundThreshold">${[.25,.5,.75].map(x=>`<option value="${x}" ${Number(state.settings.roundingThreshold)===x?'selected':''}>${Math.round(x*100)}%</option>`).join('')}</select></div></div><div class="settings-section"><h3>Tussenstops</h3><p class="muted small">Tussenstops worden altijd omhoog afgerond. Aftrek van de hoofdactiviteit wordt altijd omlaag afgerond.</p><div class="field"><label>Eenheid tussenstop</label><select id="interruptUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.interruptionUnitMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div><div class="field"><label>Hoofdactiviteit aftrekken vanaf</label><select id="interruptThreshold">${[5,10,15,30,45,60].map(x=>`<option value="${x}" ${Number(state.settings.interruptionDeductAfterMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div></div><div class="settings-section"><h3>Thema's</h3><div class="list">${sortedByUsage(state.themes).map(t=>`<div class="entry"><div class="entry-main"><strong>${safeText(t.name)}</strong><small>${t.usageCount||0}× gebruikt</small></div><button class="btn small" data-submanage="${t.id}">Subthema's</button></div>`).join('')||'<p class="muted small">Nog geen thema\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuw thema</label><input id="settingsNewTheme"></div><button id="settingsAddTheme" class="btn small">Toevoegen</button></div></div><div class="settings-section"><h3>Collega's</h3><div class="list">${sortedByUsage(state.colleagues).map(c=>`<div class="entry"><div class="entry-main"><strong>${safeText(c.name)}</strong><small>${c.usageCount||0}× gebruikt</small></div><button class="btn small danger" data-delete-colleague="${c.id}">Wis</button></div>`).join('')||'<p class="muted small">Nog geen collega\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuwe collega</label><input id="settingsNewColleague"></div><button id="settingsAddColleague" class="btn small">Toevoegen</button></div></div><div class="settings-section"><h3>Backup</h3><div class="row"><button id="exportData" class="btn">Exporteer backup</button><label class="btn" style="text-align:center">Herstel backup<input id="importData" type="file" accept="application/json,.json" hidden></label></div></div><div class="settings-section"><button id="resetData" class="btn danger full">Wis alle gegevens</button></div>`);
-  $('#timeDisplay').closest('.settings-section')?.insertAdjacentHTML('afterend', `<div class="settings-section"><h3>Bediening</h3><div class="check-row"><input id="swipeDeleteEnabled" type="checkbox" ${state.settings.swipeDeleteEnabled!==false?'checked':''}><label for="swipeDeleteEnabled"><strong>Verwijderen met swipe</strong><small>Bewerken met swipe blijft altijd mogelijk. Verder vegen kan verwijderen na bevestiging.</small></label></div></div>`);
+  const timeBody = `<div class="field"><label>Weergave</label><select id="timeDisplay"><option value="decimal" ${state.settings.timeDisplay==='decimal'?'selected':''}>Decimale uren (1,25)</option><option value="clock" ${state.settings.timeDisplay==='clock'?'selected':''}>Uren:minuten (1:15)</option></select></div><div class="field"><label>Afronding</label><select id="roundMode"><option value="none" ${state.settings.roundingMode==='none'?'selected':''}>Geen afronding</option><option value="up" ${state.settings.roundingMode==='up'?'selected':''}>Altijd omhoog</option><option value="threshold" ${state.settings.roundingMode==='threshold'?'selected':''}>Vanaf drempel omhoog</option></select></div><div class="field"><label>Tijdseenheid</label><select id="roundUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.roundingUnitMinutes)===x?'selected':''}>${x} min · ${decimalHours(x)} uur</option>`).join('')}</select></div><div class="field"><label>Drempel</label><select id="roundThreshold">${[.25,.5,.75].map(x=>`<option value="${x}" ${Number(state.settings.roundingThreshold)===x?'selected':''}>${Math.round(x*100)}%</option>`).join('')}</select></div>`;
+  const controlBody = `<div class="check-row settings-toggle-row"><input id="swipeDeleteEnabled" type="checkbox" ${state.settings.swipeDeleteEnabled!==false?'checked':''}><label for="swipeDeleteEnabled"><strong>Verwijderen met swipe</strong><small>Bewerken met swipe blijft altijd mogelijk. Verder vegen kan verwijderen na bevestiging.</small></label></div>`;
+  const interruptionBody = `<p class="muted small">Tussenstops worden altijd omhoog afgerond. Aftrek van de hoofdactiviteit wordt altijd omlaag afgerond.</p><div class="field"><label>Eenheid tussenstop</label><select id="interruptUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.interruptionUnitMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div><div class="field"><label>Hoofdactiviteit aftrekken vanaf</label><select id="interruptThreshold">${[5,10,15,30,45,60].map(x=>`<option value="${x}" ${Number(state.settings.interruptionDeductAfterMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div>`;
+  const themeBody = `<div class="settings-list">${sortedByUsage(state.themes).map(t=>`<div class="settings-list-row"><div class="entry-main"><strong>${safeText(t.name)}</strong><small>${t.usageCount||0}× gebruikt</small></div><button class="settings-row-action" data-submanage="${t.id}">Subthema's</button></div>`).join('')||'<p class="muted small">Nog geen thema\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuw thema</label><input id="settingsNewTheme"></div><button id="settingsAddTheme" class="btn small">Toevoegen</button></div>`;
+  const colleagueBody = `<div class="settings-list">${sortedByUsage(state.colleagues).map(c=>`<div class="settings-list-row"><div class="entry-main"><strong>${safeText(c.name)}</strong><small>${c.usageCount||0}× gebruikt</small></div><button class="settings-row-action danger" data-delete-colleague="${c.id}">Wis</button></div>`).join('')||'<p class="muted small">Nog geen collega\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuwe collega</label><input id="settingsNewColleague"></div><button id="settingsAddColleague" class="btn small">Toevoegen</button></div>`;
+  const backupBody = `<div class="row"><button id="exportData" class="btn">Back-up maken</button><label class="btn" style="text-align:center">Back-up herstellen<input id="importData" type="file" accept="application/json,.json" hidden></label></div><button id="resetData" class="settings-danger-action">Wis alle gegevens</button>`;
+  openModal(`<div class="modal-head settings-modal-head"><div><div class="kicker">Beheer</div><h2 id="modalTitle">Instellingen</h2></div><button class="close">×</button></div><p class="settings-autosave">Wijzigingen worden automatisch opgeslagen.</p>${settingsAccordion('Tijd en afronding', `${displayMinutes(state.settings.roundingUnitMinutes)} · ${state.settings.roundingMode==='none'?'geen afronding':'afronding actief'}`, timeBody)}${settingsAccordion('Bediening', 'Swipe en verwijderen', controlBody)}${settingsAccordion('Tussenstops', `${state.settings.interruptionUnitMinutes} minuten`, interruptionBody)}${settingsAccordion("Thema's", `${state.themes.length} opgeslagen`, themeBody)}${settingsAccordion("Collega's", `${state.colleagues.length} opgeslagen`, colleagueBody)}${settingsAccordion('Data & back-up', 'Exporteren, herstellen en wissen', backupBody)}`);
   $('#swipeDeleteEnabled')?.addEventListener('change',event=>{state.settings.swipeDeleteEnabled=event.target.checked;saveState();toast('Instelling bewaard');});
   const saveSettings=()=>{state.settings.timeDisplay=$('#timeDisplay').value;state.settings.roundingMode=$('#roundMode').value;state.settings.roundingUnitMinutes=Number($('#roundUnit').value);state.settings.roundingThreshold=Number($('#roundThreshold').value);state.settings.interruptionUnitMinutes=Number($('#interruptUnit').value);state.settings.interruptionDeductAfterMinutes=Number($('#interruptThreshold').value);saveState();};
   ['timeDisplay','roundMode','roundUnit','roundThreshold','interruptUnit','interruptThreshold'].forEach(id=>$('#'+id).addEventListener('change',()=>{saveSettings();toast('Instelling bewaard');})); $('#settingsAddTheme').addEventListener('click',()=>{if(addTheme($('#settingsNewTheme').value)){openSettings();toast('Thema toegevoegd');}}); $('#settingsAddColleague').addEventListener('click',()=>{if(addColleague($('#settingsNewColleague').value)){openSettings();toast('Collega toegevoegd');}}); $$('[data-submanage]').forEach(btn=>btn.addEventListener('click',()=>openSubthemeManage(btn.dataset.submanage))); $$('[data-delete-colleague]').forEach(btn=>btn.addEventListener('click',()=>{const c=state.colleagues.find(x=>x.id===btn.dataset.deleteColleague);if(c&&confirm(`Collega "${c.name}" uit beheer verwijderen?`)){state.colleagues=state.colleagues.filter(x=>x.id!==c.id);saveState();openSettings();}})); $('#exportData').addEventListener('click',exportBackup);$('#importData').addEventListener('change',importBackup);$('#resetData').addEventListener('click',resetAll);

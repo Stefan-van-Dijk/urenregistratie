@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const PERIOD_MODES = ['day', 'week', 'month', 'year'];
+  const PERIOD_MODES = ['day', 'week', 'month', 'quarter', 'year', 'all'];
   const SCREEN_EDGE_SWIPE_ZONE = 32;
   const SCREEN_EDGE_SWIPE_DISTANCE = 72;
 
@@ -65,7 +65,7 @@
   }
 
   function periodModeLabel(mode) {
-    return ({ day: 'Dag', week: 'Week', month: 'Maand', year: 'Jaar' })[mode] || 'Week';
+    return ({ day: 'Dag', week: 'Week', month: 'Maand', quarter: 'Kwartaal', year: 'Jaar', all: 'Alles' })[mode] || 'Week';
   }
 
   function setPeriodMode(mode) {
