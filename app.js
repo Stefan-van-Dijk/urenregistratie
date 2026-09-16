@@ -46,6 +46,7 @@ const defaultState = () => ({
 
 let state = loadState();
 let timerTick = null;
+let currentView = 'home';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -365,11 +366,17 @@ function suggestion() {
 function render() {
   clearInterval(timerTick);
   timerTick = null;
+  if (currentView === 'settings') {
+    renderSettingsPage();
+    syncNavigationChrome();
+    return;
+  }
   const main = $('#main');
   const periodEntries = entriesForPeriod();
   const t = totals(periodEntries);
   main.innerHTML = `${renderPeriodNav()}${renderSummary(t)}${renderActionCard()}${renderPeriodList(periodEntries)}`;
   wireHome();
+  syncNavigationChrome();
 }
 
 function renderPeriodNav() {
@@ -601,13 +608,41 @@ function settingsAccordion(title, subtitle, body) {
 }
 
 function openSettings() {
+  currentView = 'settings';
+  closeModal();
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeSettings() {
+  currentView = 'home';
+  closeModal();
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function syncNavigationChrome() {
+  const settings = currentView === 'settings';
+  const title = $('#appTitle');
+  const count = $('#appTaskCount');
+  const action = $('#openSettings');
+  if (title) title.textContent = settings ? 'Instellingen' : 'Tijdsregistratie';
+  if (count) count.dataset.navigationView = settings ? 'settings' : 'home';
+  if (action) {
+    action.textContent = settings ? '←' : '⚙︎';
+    action.setAttribute('aria-label', settings ? 'Terug naar tijdsregistratie' : 'Instellingen');
+  }
+  if (window.parent !== window) window.parent.postMessage({ type: 'urenregistratie-view', view: currentView }, window.location.origin);
+}
+
+function renderSettingsPage() {
   const timeBody = `<div class="field"><label>Weergave</label><select id="timeDisplay"><option value="decimal" ${state.settings.timeDisplay==='decimal'?'selected':''}>Decimale uren (1,25)</option><option value="clock" ${state.settings.timeDisplay==='clock'?'selected':''}>Uren:minuten (1:15)</option></select></div><div class="field"><label>Afronding</label><select id="roundMode"><option value="none" ${state.settings.roundingMode==='none'?'selected':''}>Geen afronding</option><option value="up" ${state.settings.roundingMode==='up'?'selected':''}>Altijd omhoog</option><option value="threshold" ${state.settings.roundingMode==='threshold'?'selected':''}>Vanaf drempel omhoog</option></select></div><div class="field"><label>Tijdseenheid</label><select id="roundUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.roundingUnitMinutes)===x?'selected':''}>${x} min · ${decimalHours(x)} uur</option>`).join('')}</select></div><div class="field"><label>Drempel</label><select id="roundThreshold">${[.25,.5,.75].map(x=>`<option value="${x}" ${Number(state.settings.roundingThreshold)===x?'selected':''}>${Math.round(x*100)}%</option>`).join('')}</select></div>`;
   const controlBody = `<div class="check-row settings-toggle-row"><input id="swipeDeleteEnabled" type="checkbox" ${state.settings.swipeDeleteEnabled!==false?'checked':''}><label for="swipeDeleteEnabled"><strong>Verwijderen met swipe</strong><small>Bewerken met swipe blijft altijd mogelijk. Verder vegen kan verwijderen na bevestiging.</small></label></div>`;
   const interruptionBody = `<p class="muted small">Tussenstops worden altijd omhoog afgerond. Aftrek van de hoofdactiviteit wordt altijd omlaag afgerond.</p><div class="field"><label>Eenheid tussenstop</label><select id="interruptUnit">${ROUNDING_UNITS.map(x=>`<option value="${x}" ${Number(state.settings.interruptionUnitMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div><div class="field"><label>Hoofdactiviteit aftrekken vanaf</label><select id="interruptThreshold">${[5,10,15,30,45,60].map(x=>`<option value="${x}" ${Number(state.settings.interruptionDeductAfterMinutes)===x?'selected':''}>${x} minuten</option>`).join('')}</select></div>`;
   const themeBody = `<div class="settings-list">${sortedByUsage(state.themes).map(t=>`<div class="settings-list-row"><div class="entry-main"><strong>${safeText(t.name)}</strong><small>${t.usageCount||0}× gebruikt</small></div><button class="settings-row-action" data-submanage="${t.id}">Subthema's</button></div>`).join('')||'<p class="muted small">Nog geen thema\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuw thema</label><input id="settingsNewTheme"></div><button id="settingsAddTheme" class="btn small">Toevoegen</button></div>`;
   const colleagueBody = `<div class="settings-list">${sortedByUsage(state.colleagues).map(c=>`<div class="settings-list-row"><div class="entry-main"><strong>${safeText(c.name)}</strong><small>${c.usageCount||0}× gebruikt</small></div><button class="settings-row-action danger" data-delete-colleague="${c.id}">Wis</button></div>`).join('')||'<p class="muted small">Nog geen collega\'s.</p>'}</div><div class="inline-form"><div class="field"><label>Nieuwe collega</label><input id="settingsNewColleague"></div><button id="settingsAddColleague" class="btn small">Toevoegen</button></div>`;
   const backupBody = `<div class="row"><button id="exportData" class="btn">Back-up maken</button><label class="btn" style="text-align:center">Back-up herstellen<input id="importData" type="file" accept="application/json,.json" hidden></label></div><button id="resetData" class="settings-danger-action">Wis alle gegevens</button>`;
-  openModal(`<div class="modal-head settings-modal-head"><div><div class="kicker">Beheer</div><h2 id="modalTitle">Instellingen</h2></div><button class="close">×</button></div><p class="settings-autosave">Wijzigingen worden automatisch opgeslagen.</p>${settingsAccordion('Tijd en afronding', `${displayMinutes(state.settings.roundingUnitMinutes)} · ${state.settings.roundingMode==='none'?'geen afronding':'afronding actief'}`, timeBody)}${settingsAccordion('Bediening', 'Swipe en verwijderen', controlBody)}${settingsAccordion('Tussenstops', `${state.settings.interruptionUnitMinutes} minuten`, interruptionBody)}${settingsAccordion("Thema's", `${state.themes.length} opgeslagen`, themeBody)}${settingsAccordion("Collega's", `${state.colleagues.length} opgeslagen`, colleagueBody)}${settingsAccordion('Data & back-up', 'Exporteren, herstellen en wissen', backupBody)}`);
+  $('#main').innerHTML = `<section class="settings-page"><div class="section-title settings-page-title"><div><div class="kicker">Beheer</div><h2>Instellingen</h2></div></div><p class="settings-autosave">Wijzigingen worden automatisch opgeslagen.</p>${settingsAccordion('Tijd en afronding', `${displayMinutes(state.settings.roundingUnitMinutes)} · ${state.settings.roundingMode==='none'?'geen afronding':'afronding actief'}`, timeBody)}${settingsAccordion('Bediening', 'Swipe en verwijderen', controlBody)}${settingsAccordion('Tussenstops', `${state.settings.interruptionUnitMinutes} minuten`, interruptionBody)}${settingsAccordion("Thema's", `${state.themes.length} opgeslagen`, themeBody)}${settingsAccordion("Collega's", `${state.colleagues.length} opgeslagen`, colleagueBody)}${settingsAccordion('Data & back-up', 'Exporteren, herstellen en wissen', backupBody)}</section>`;
   $('#swipeDeleteEnabled')?.addEventListener('change',event=>{state.settings.swipeDeleteEnabled=event.target.checked;saveState();toast('Instelling bewaard');});
   const saveSettings=()=>{state.settings.timeDisplay=$('#timeDisplay').value;state.settings.roundingMode=$('#roundMode').value;state.settings.roundingUnitMinutes=Number($('#roundUnit').value);state.settings.roundingThreshold=Number($('#roundThreshold').value);state.settings.interruptionUnitMinutes=Number($('#interruptUnit').value);state.settings.interruptionDeductAfterMinutes=Number($('#interruptThreshold').value);saveState();};
   ['timeDisplay','roundMode','roundUnit','roundThreshold','interruptUnit','interruptThreshold'].forEach(id=>$('#'+id).addEventListener('change',()=>{saveSettings();toast('Instelling bewaard');})); $('#settingsAddTheme').addEventListener('click',()=>{if(addTheme($('#settingsNewTheme').value)){openSettings();toast('Thema toegevoegd');}}); $('#settingsAddColleague').addEventListener('click',()=>{if(addColleague($('#settingsNewColleague').value)){openSettings();toast('Collega toegevoegd');}}); $$('[data-submanage]').forEach(btn=>btn.addEventListener('click',()=>openSubthemeManage(btn.dataset.submanage))); $$('[data-delete-colleague]').forEach(btn=>btn.addEventListener('click',()=>{const c=state.colleagues.find(x=>x.id===btn.dataset.deleteColleague);if(c&&confirm(`Collega "${c.name}" uit beheer verwijderen?`)){state.colleagues=state.colleagues.filter(x=>x.id!==c.id);saveState();openSettings();}})); $('#exportData').addEventListener('click',exportBackup);$('#importData').addEventListener('change',importBackup);$('#resetData').addEventListener('click',resetAll);
@@ -634,7 +669,7 @@ function registerServiceWorker() {
 }
 
 function init() {
-  $('#openSettings').addEventListener('click',openSettings); $('#modalBackdrop').addEventListener('click',event=>{if(event.target===$('#modalBackdrop'))closeModal();}); render();registerServiceWorker();
+  $('#openSettings').addEventListener('click',()=>currentView==='settings'?closeSettings():openSettings()); $('#modalBackdrop').addEventListener('click',event=>{if(event.target===$('#modalBackdrop'))closeModal();}); render();registerServiceWorker();
 }
 
 document.addEventListener('DOMContentLoaded',init);

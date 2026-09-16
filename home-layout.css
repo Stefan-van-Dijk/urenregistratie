@@ -117,6 +117,9 @@
 .activity-edit-link{border:0;background:transparent;color:var(--accent);padding:6px 0;font-weight:750;cursor:pointer}
 
 /* Dezelfde rustige instellingenstructuur als in kilometerregistratie. */
+.settings-page{padding:2px 0 18px}
+.settings-page-title{margin-bottom:4px}
+.settings-page-title h2{margin:3px 0 0;font-size:20px}
 .settings-modal-head h2{margin:2px 0 0}
 .settings-autosave{margin:-2px 0 13px;color:var(--muted);font-size:12px}
 .settings-accordion{width:100%;border-bottom:1px solid var(--line)}
