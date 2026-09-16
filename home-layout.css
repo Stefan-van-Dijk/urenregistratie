@@ -1,4 +1,4 @@
-/* Main-screen interaction aligned with kilometerregistratie. */
+/* Interaction layer aligned with kilometerregistratie; context adapted to time registration. */
 .period-overview{
   margin-top:0!important;
   margin-bottom:14px!important;
@@ -7,10 +7,15 @@
   border:0!important;
   border-bottom:1px solid var(--line)!important;
   border-radius:0!important;
+  touch-action:pan-y;
+  user-select:none;
+  -webkit-user-select:none;
 }
 .period-overview .period-head{margin-bottom:5px}
-.period-overview .period-center{gap:4px}
+.period-overview .period-center{gap:4px;cursor:pointer;border-radius:10px;padding:3px 8px}
+.period-overview .period-center:active{background:color-mix(in srgb,var(--surface2) 60%,transparent)}
 .period-overview .period-center strong{font-size:25px;letter-spacing:-.025em}
+.period-overview .period-center strong::after{content:' ⌄';color:var(--muted);font-size:13px;vertical-align:middle}
 .period-overview .period-center small{font-size:11px}
 .period-overview .period-arrow{background:transparent;border:0;color:var(--muted);font-size:24px}
 .period-overview .period-tabs{margin-top:8px;margin-bottom:0}
@@ -32,16 +37,20 @@
 .home-action-copy p{margin:0;color:var(--muted);font-size:13px}
 .home-action-copy small{display:block;margin-top:5px;color:var(--muted)}
 .home-action-button{flex:0 0 auto;min-width:138px}
+.context-preparing>*{opacity:.58;transition:opacity .2s ease}
+.context-preparing .kicker{opacity:1}
 
-.period-entry-mode{padding-top:18px!important}
+.period-entry-mode{padding-top:18px!important;animation:inline-panel-in .26s cubic-bezier(.2,.8,.2,1)}
 .inline-register-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .inline-register-head h2{margin:4px 0 0;font-size:24px;letter-spacing:-.025em}
 .inline-close{width:40px;height:40px;padding:0!important;font-size:27px!important;line-height:1}
 .inline-proposal,.inline-parent-task{display:flex;flex-direction:column;gap:3px;padding:11px 0 13px;border-bottom:1px solid var(--line);margin-bottom:13px}
 .inline-proposal span,.inline-parent-task span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:750}
 .inline-proposal strong,.inline-parent-task strong{font-size:15px}
+.inline-proposal small{color:var(--muted);font-size:10px}
 .inline-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px}
-.inline-field{display:block;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.inline-field{display:block;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);animation:inline-choice-in .3s ease both}
+.inline-field:nth-child(2){animation-delay:.045s}
 .inline-field>span,.inline-label{display:block;margin-bottom:5px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:750}
 .inline-field>span small{font-size:9px;text-transform:none;letter-spacing:0;font-weight:600}
 .inline-field select,.inline-field input{min-height:34px;padding:0;border:0;background:transparent;border-radius:0}
@@ -56,7 +65,56 @@
 .inline-add-person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin:0 0 12px}
 .inline-add-person input{min-height:40px}
 .inline-first-theme{margin-bottom:0}
+.start-confirm{margin-top:3px;min-height:48px}
+.inline-register-context{margin-top:8px;text-align:center;color:var(--muted);font-size:10px}
 
+.period-choice-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px}
+.period-choice{min-height:52px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--text);font-weight:750;text-align:center;cursor:pointer}
+.period-choice.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--surface2))}
+.period-choice-help{display:grid;gap:7px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.4}
+
+.inline-stop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.inline-stop-grid>div{padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--surface2)}
+.inline-stop-grid span,.inline-stop-grid strong{display:block}
+.inline-stop-grid span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.inline-stop-grid strong{margin-top:3px;font-size:16px}
+.inline-stop-grid .primary{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 10%,var(--surface2))}
+.inline-stop-colleagues .settings-section{padding:8px 0 13px}
+
+/* Kilometer-app style inline details and left-swipe actions. */
+.section .list{gap:0;border-top:1px solid var(--line)}
+.activity-entry-shell{border-bottom:1px solid var(--line)}
+.activity-entry-shell.interruption-shell{margin-left:20px}
+.activity-swipe-row{position:relative;overflow:hidden;background:linear-gradient(90deg,var(--surface2),var(--surface2));border-radius:0}
+.activity-swipe-actions{position:absolute;inset:0 0 0 auto;width:168px;display:grid;grid-template-columns:84px 84px;align-items:stretch;text-align:center;font-size:11px;font-weight:800}
+.activity-swipe-actions span{display:flex;align-items:center;justify-content:center}
+.activity-swipe-edit{background:color-mix(in srgb,var(--accent) 28%,var(--surface2));color:var(--text)}
+.activity-swipe-delete{background:color-mix(in srgb,var(--bad) 32%,var(--surface2));color:#fff}
+.activity-swipe-row.delete-armed .activity-swipe-delete{background:var(--bad)}
+.activity-swipe-surface.entry{position:relative;z-index:1;margin:0!important;border:0!important;border-radius:0!important;background:var(--bg)!important;padding:14px 2px!important;touch-action:pan-y}
+.activity-entry-shell.expanded .activity-swipe-surface.entry{background:color-mix(in srgb,var(--surface) 50%,var(--bg))!important}
+.activity-inline-details{padding:0 2px 15px;background:var(--bg);animation:inline-details-in .2s ease}
+.activity-inline-details[hidden]{display:none}
+.activity-inline-details-inner{padding:11px 0 2px}
+.activity-inline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.activity-inline-context{display:grid;gap:0;margin-top:9px;border-top:1px solid var(--line)}
+.activity-inline-item{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.activity-inline-grid .activity-inline-item{display:block;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface2)}
+.activity-inline-item span{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.activity-inline-item strong{font-size:12px;text-align:right}
+.activity-inline-grid .activity-inline-item strong{display:block;margin-top:3px;text-align:left;font-size:15px}
+.activity-inline-actions{padding-top:11px}
+.activity-edit-link{border:0;background:transparent;color:var(--accent);padding:6px 0;font-weight:750;cursor:pointer}
+
+@keyframes inline-panel-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes inline-choice-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes inline-details-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-height:760px){
+  .period-entry-mode{padding-top:12px!important}
+  .inline-fields{gap:7px}
+  .start-confirm{min-height:42px}
+}
 @media(max-width:520px){
   .period-overview .period-center strong{font-size:23px}
   .period-overview .period-summary .summary-value{font-size:38px}
@@ -65,4 +123,6 @@
   .home-action-button{width:100%}
   .inline-fields{grid-template-columns:1fr}
   .inline-field-wide{grid-column:auto}
+  .inline-stop-grid{grid-template-columns:1fr 1fr}
+  .activity-inline-grid{grid-template-columns:1fr 1fr}
 }
