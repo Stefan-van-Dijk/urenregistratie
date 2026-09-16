@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.4.2';
+  const APP_VERSION = '0.4.3';
 
   function dateVersionText() {
     const date = new Intl.DateTimeFormat('nl-NL', {
