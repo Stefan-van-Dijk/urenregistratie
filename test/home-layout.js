@@ -687,9 +687,6 @@
   function deleteEntryInline(id) {
     const entry = entryById(id);
     if (!entry) return;
-    const childCount = state.entries.filter(item => item.parentActivityId === id).length;
-    const message = childCount ? `Deze registratie en ${childCount} gekoppelde tussenstop(s) verwijderen?` : 'Deze registratie verwijderen?';
-    if (!confirm(message)) return;
     const parentId = entry.parentActivityId;
     state.entries = state.entries.filter(item => item.id !== id && item.parentActivityId !== id);
     if (parentId) {
