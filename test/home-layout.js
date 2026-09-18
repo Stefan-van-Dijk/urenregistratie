@@ -557,11 +557,14 @@
       shell.className = `activity-entry-shell${entry.activityType === 'interruption' ? ' interruption-shell' : ''}`;
       shell.dataset.id = id;
       const canDelete = state.settings.swipeDeleteEnabled !== false;
+      const canReopen = state.timer.status === 'inactive' && state.lastCompletion?.type === 'task' && state.lastCompletion.entryId === id && entry.activityType !== 'interruption';
+      const actionCount = (canDelete ? 1 : 0) + 1 + (canReopen ? 1 : 0);
       shell.innerHTML = `
         <div class="activity-swipe-row" data-id="${safeText(id)}">
-          <div class="activity-swipe-actions${canDelete ? '' : ' edit-only'}">
+          <div class="activity-swipe-actions" style="--activity-action-count:${actionCount}">
             ${canDelete ? `<button type="button" class="activity-swipe-action activity-swipe-delete" data-swipe-action="delete" aria-label="Registratie verwijderen">Verwijder</button>` : ''}
             <button type="button" class="activity-swipe-action activity-swipe-edit" data-swipe-action="edit" aria-label="Registratie bewerken">Bewerk</button>
+            ${canReopen ? `<button type="button" class="activity-swipe-action activity-swipe-reopen" data-swipe-action="reopen" aria-label="Taak opnieuw activeren">Activeer</button>` : ''}
           </div>
         </div>
         <div class="activity-inline-details" ${expandedEntryId === id ? '' : 'hidden'}></div>`;
@@ -579,6 +582,11 @@
         event.stopPropagation();
         resetActivitySwipe(swipeRow);
         deleteEntryInline(id);
+      });
+      shell.querySelector('[data-swipe-action="reopen"]')?.addEventListener('click', event => {
+        event.stopPropagation();
+        resetActivitySwipe(swipeRow);
+        reopenLastTask(id);
       });
       if (expandedEntryId === id) {
         shell.classList.add('expanded');
@@ -625,7 +633,7 @@
       surface.style.transition = 'transform .18s ease';
       surface.style.transform = 'translateX(0)';
     }
-    row.classList.remove('delete-armed');
+    row.classList.remove('delete-armed', 'swipe-open');
   }
 
   function closeActivitySwipes(except = null) {
@@ -675,13 +683,14 @@
       return;
     }
     event.preventDefault();
-    const canDelete = state.settings.swipeDeleteEnabled !== false;
-    const maxDistance = canDelete ? 168 : 84;
+    const actionCount = gesture.row?.querySelectorAll('.activity-swipe-action').length || 1;
+    const maxDistance = Math.max(84, actionCount * 84);
     const dx = Math.max(-maxDistance, Math.min(0, rawX));
+    gesture.maxDistance = maxDistance;
     gesture.dx = dx;
     gesture.surface.style.transition = 'none';
     gesture.surface.style.transform = `translateX(${dx}px)`;
-    gesture.row.classList.toggle('delete-armed', canDelete && dx <= -132);
+    gesture.row.classList.remove('delete-armed');
   }
 
   function deleteEntryInline(id) {
@@ -709,15 +718,11 @@
     }
     gesture.surface.dataset.suppressClick = '1';
     setTimeout(() => { if (gesture.surface) delete gesture.surface.dataset.suppressClick; }, 450);
-    const canDelete = state.settings.swipeDeleteEnabled !== false;
-    if (canDelete && gesture.dx <= -132) {
-      resetActivitySwipe(gesture.row);
-      setTimeout(() => deleteEntryInline(gesture.id), 20);
-      return;
-    }
     if (gesture.dx <= -36) {
-      resetActivitySwipe(gesture.row);
-      setTimeout(() => openEntryEdit(gesture.id), 60);
+      const maxDistance = gesture.maxDistance || Math.max(84, (gesture.row?.querySelectorAll('.activity-swipe-action').length || 1) * 84);
+      gesture.surface.style.transition = 'transform .18s cubic-bezier(.2,.8,.2,1)';
+      gesture.surface.style.transform = `translateX(-${maxDistance}px)`;
+      gesture.row.classList.add('swipe-open');
       return;
     }
     resetActivitySwipe(gesture.row);
