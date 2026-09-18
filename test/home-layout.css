@@ -89,6 +89,7 @@
 .activity-entry-shell.interruption-shell{margin-left:20px}
 .activity-swipe-row{position:relative;overflow:hidden;background:linear-gradient(90deg,var(--surface2),var(--surface2));border-radius:0}
 .activity-swipe-actions{--activity-action-count:2;position:absolute;inset:0 0 0 auto;width:calc(var(--activity-action-count)*84px);display:grid;grid-template-columns:repeat(var(--activity-action-count),84px);align-items:stretch;text-align:center;font-size:11px;font-weight:800}
+.activity-swipe-actions-left{inset:0 auto 0 0}
 .activity-swipe-action{display:flex;align-items:center;justify-content:center;border:0;border-radius:0;padding:0;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
 .activity-swipe-edit{background:color-mix(in srgb,var(--accent) 28%,var(--surface2));color:var(--text)}
 .activity-swipe-delete{background:color-mix(in srgb,var(--bad) 32%,var(--surface2));color:#fff}
