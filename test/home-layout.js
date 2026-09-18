@@ -558,13 +558,13 @@
       shell.dataset.id = id;
       const canDelete = state.settings.swipeDeleteEnabled !== false;
       const canReopen = state.timer.status === 'inactive' && state.lastCompletion?.type === 'task' && state.lastCompletion.entryId === id && entry.activityType !== 'interruption';
-      const actionCount = (canDelete ? 1 : 0) + 1 + (canReopen ? 1 : 0);
+      const actionCount = (canDelete ? 1 : 0) + 1;
       shell.innerHTML = `
         <div class="activity-swipe-row" data-id="${safeText(id)}">
-          <div class="activity-swipe-actions" style="--activity-action-count:${actionCount}">
+          ${canReopen ? `<div class="activity-swipe-actions activity-swipe-actions-left" style="--activity-action-count:1"><button type="button" class="activity-swipe-action activity-swipe-reopen" data-swipe-action="reopen" aria-label="Taak opnieuw activeren">Activeer</button></div>` : ''}
+          <div class="activity-swipe-actions activity-swipe-actions-right" style="--activity-action-count:${actionCount}">
             ${canDelete ? `<button type="button" class="activity-swipe-action activity-swipe-delete" data-swipe-action="delete" aria-label="Registratie verwijderen">Verwijder</button>` : ''}
             <button type="button" class="activity-swipe-action activity-swipe-edit" data-swipe-action="edit" aria-label="Registratie bewerken">Bewerk</button>
-            ${canReopen ? `<button type="button" class="activity-swipe-action activity-swipe-reopen" data-swipe-action="reopen" aria-label="Taak opnieuw activeren">Activeer</button>` : ''}
           </div>
         </div>
         <div class="activity-inline-details" ${expandedEntryId === id ? '' : 'hidden'}></div>`;
@@ -677,16 +677,14 @@
       if (Math.abs(rawX) > 8 && Math.abs(rawX) > Math.abs(rawY)) gesture.horizontal = true;
       else return;
     }
-    if (rawX > 8) {
-      gesture.dx = 0;
-      resetActivitySwipe(gesture.row);
-      return;
-    }
     event.preventDefault();
-    const actionCount = gesture.row?.querySelectorAll('.activity-swipe-action').length || 1;
-    const maxDistance = Math.max(84, actionCount * 84);
-    const dx = Math.max(-maxDistance, Math.min(0, rawX));
-    gesture.maxDistance = maxDistance;
+    const rightCount = gesture.row?.querySelectorAll('.activity-swipe-actions-right .activity-swipe-action').length || 0;
+    const leftCount = gesture.row?.querySelectorAll('.activity-swipe-actions-left .activity-swipe-action').length || 0;
+    const rightDistance = rightCount * 84;
+    const leftDistance = leftCount * 84;
+    const dx = Math.max(-rightDistance, Math.min(leftDistance, rawX));
+    gesture.rightDistance = rightDistance;
+    gesture.leftDistance = leftDistance;
     gesture.dx = dx;
     gesture.surface.style.transition = 'none';
     gesture.surface.style.transform = `translateX(${dx}px)`;
@@ -718,10 +716,10 @@
     }
     gesture.surface.dataset.suppressClick = '1';
     setTimeout(() => { if (gesture.surface) delete gesture.surface.dataset.suppressClick; }, 450);
-    if (gesture.dx <= -36) {
-      const maxDistance = gesture.maxDistance || Math.max(84, (gesture.row?.querySelectorAll('.activity-swipe-action').length || 1) * 84);
+    const target = gesture.dx >= 36 ? gesture.leftDistance : gesture.dx <= -36 ? -gesture.rightDistance : 0;
+    if (target) {
       gesture.surface.style.transition = 'transform .18s cubic-bezier(.2,.8,.2,1)';
-      gesture.surface.style.transform = `translateX(-${maxDistance}px)`;
+      gesture.surface.style.transform = `translateX(${target}px)`;
       gesture.row.classList.add('swipe-open');
       return;
     }
