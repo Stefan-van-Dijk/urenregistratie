@@ -1,4 +1,4 @@
-const CACHE = 'urenregistratie-test-2';
+const CACHE = 'urenregistratie-test-3';
 const ASSETS = ['./','./index.html','./styles.css','./home-layout.css','./home-top.css','./app.js','./home-layout.js','./home-top.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('urenregistratie-test-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim();});
