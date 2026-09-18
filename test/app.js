@@ -381,10 +381,7 @@ function render() {
 }
 
 function renderUndoCompletion() {
-  if (state.timer.status !== 'inactive' || state.lastCompletion?.type !== 'task') return '';
-  const entry = state.entries.find(item => item.id === state.lastCompletion.entryId && item.activityType !== 'interruption');
-  if (!entry) return '';
-  return `<section class="undo-completion"><span><strong>Taak afgerond</strong><small>${safeText(entry.themeName || 'Activiteit')} · ${displayMinutes(entry.ownMinutes)}</small></span><button id="reopenLastTask" type="button">Opnieuw activeren</button></section>`;
+  return '';
 }
 
 function restoreTimerFromEntry(entry) {
@@ -402,10 +399,11 @@ function restoreTimerFromEntry(entry) {
   };
 }
 
-function reopenLastTask() {
+function reopenLastTask(id = state.lastCompletion?.entryId) {
   if (state.timer.status !== 'inactive') return toast('Er is al een actieve taak');
   const completion = state.lastCompletion;
-  const entry = state.entries.find(item => item.id === completion?.entryId && item.activityType !== 'interruption');
+  if (completion?.type !== 'task' || completion.entryId !== id) return toast('Alleen de laatst afgeronde taak kan opnieuw worden geactiveerd');
+  const entry = state.entries.find(item => item.id === id && item.activityType !== 'interruption');
   if (!entry?.startISO) return toast('Deze taak kan niet opnieuw worden geactiveerd');
   for (const allocation of entry.allocations || []) {
     const colleague = state.colleagues.find(item => item.id === allocation.colleagueId);
